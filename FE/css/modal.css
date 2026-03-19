@@ -1,0 +1,301 @@
+/* ---------- IMPORT MODAL AND DRAG-DROP ---------- */
+.import-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.import-modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  border-radius: 1.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  width: 90%;
+  max-width: 600px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0.5rem;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.drag-drop-area {
+  border: 2px dashed var(--accent-cyan);
+  border-radius: 1rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background: var(--bg-secondary);
+}
+
+.drag-drop-area:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-yellow);
+}
+
+.drag-drop-area.dragover {
+  border-color: var(--accent-yellow);
+  background: var(--bg-tertiary);
+  transform: scale(1.02);
+}
+
+.drag-drop-area i {
+  font-size: 3.5rem;
+  color: var(--accent-cyan);
+  margin-bottom: 1rem;
+  opacity: 0.8;
+  display: block;
+}
+
+.drag-drop-area h3 {
+  color: var(--text-primary);
+  margin: 0.5rem 0 0.8rem;
+  font-size: 1.2rem;
+}
+
+.drag-drop-area p {
+  color: var(--text-secondary);
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.drag-drop-area small {
+  color: var(--text-secondary);
+  opacity: 0.7;
+  display: block;
+  margin-top: 0.8rem;
+  font-size: 0.8rem;
+}
+
+.file-browse-btn {
+  background: transparent;
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.file-browse-btn:hover {
+  background: var(--accent-cyan);
+  color: var(--bg-primary);
+}
+
+/* Import preview stats */
+.import-preview {
+  margin-top: 2rem;
+}
+
+.import-preview h4 {
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.8rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat .label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.stat .value {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.stat .value.new {
+  color: #2ecc71;
+}
+
+.stat .value.duplicate {
+  color: #e74c3c;
+}
+
+.duplicate-list {
+  background: var(--bg-secondary);
+  border-left: 3px solid #e74c3c;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.duplicate-list h5 {
+  color: #e74c3c;
+  margin: 0 0 0.8rem 0;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.duplicate-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.duplicate-list li {
+  color: var(--text-secondary);
+  padding: 0.4rem 0;
+  font-size: 0.85rem;
+}
+
+.duplicate-list li:before {
+  content: "• ";
+  color: #e74c3c;
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-secondary, .btn-primary {
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.8rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-tertiary);
+}
+
+.btn-primary {
+  background: var(--accent-cyan);
+  color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:hover {
+  background: var(--accent-yellow);
+  transform: translateY(-2px);
+}
+
+/* Responsive modal */
+@media (max-width: 550px) {
+  .modal-content {
+    width: 95%;
+    max-width: 100%;
+  }
+
+  .modal-header {
+    padding: 1rem 1.2rem;
+  }
+
+  .modal-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .drag-drop-area {
+    padding: 2rem 1rem;
+  }
+
+  .drag-drop-area i {
+    font-size: 2.5rem;
+  }
+
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .btn-secondary, .btn-primary {
+    width: 100%;
+  }
+}

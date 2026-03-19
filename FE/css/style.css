@@ -1,0 +1,540 @@
+/* ---------- RESET & GLOBAL ---------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root {
+  --bg-primary: #121212;
+  --bg-secondary: #1E1E1E;
+  --bg-tertiary: #242424;
+  --text-primary: #E0E0E0;
+  --text-secondary: #aaa;
+  --border-color: #333;
+  --card-bg: rgba(26, 26, 26, 0.92);
+  --accent-cyan: #00FFFF;
+  --accent-yellow: #FFD700;
+}
+
+body.light-mode {
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f0f0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666;
+  --border-color: #e0e0e0;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --accent-cyan: #0088cc;
+  --accent-yellow: #ff9800;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  position: relative;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ---------- CANVAS BACKGROUND (GITHUB-STYLE PARTICLES) ---------- */
+#particle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2; /* behind everything */
+  pointer-events: none; /* allow clicks to pass through */
+  display: block;
+}
+
+/* ---------- FLOATING ICONS (optional liveliness) ---------- */
+.floating-icons {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1; /* between canvas and form */
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.floating-icons i {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.03); /* ultra subtle */
+  font-size: 2.5rem;
+  user-select: none;
+  animation: float 18s infinite ease-in-out;
+}
+
+/* random positions & delays — generated via JS for variety, but we add a few static ones + JS can add more */
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-25px) rotate(5deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+/* ---------- MAIN FORM CARD ---------- */
+.form-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: 2rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.02);
+  width: 100%;
+  max-width: 700px;
+  padding: 2.5rem 2rem;
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
+  z-index: 2;
+  position: relative;
+  border: 1px solid var(--border-color);
+}
+
+.form-card:hover {
+  box-shadow: 0 30px 60px -12px rgba(0, 255, 255, 0.15), 0 0 0 1px rgba(0, 255, 255, 0.1);
+}
+
+body.light-mode .form-card:hover {
+  box-shadow: 0 30px 60px -12px rgba(0, 136, 204, 0.15), 0 0 0 1px rgba(0, 136, 204, 0.1);
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subhead {
+  color: var(--text-secondary);
+  margin-bottom: 2.5rem;
+  font-size: 0.95rem;
+  border-left: 3px solid var(--accent-cyan);
+  padding-left: 1rem;
+}
+
+/* ---------- FORM FIELDS (GRID) ---------- */
+.email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+
+label i {
+  margin-right: 0.5rem;
+  color: var(--accent-cyan);
+  font-size: 0.9rem;
+}
+
+input, textarea {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  line-height: 1.5;
+}
+
+body.light-mode input, body.light-mode textarea {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 150px;
+  font-family: inherit;
+}
+
+/* glowing border on focus with cyan accent */
+input:focus, textarea:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), 0 4px 10px rgba(0, 0, 0, 0.5);
+  background: var(--bg-tertiary);
+}
+
+body.light-mode input:focus, body.light-mode textarea:focus {
+  box-shadow: 0 0 20px rgba(0, 136, 204, 0.25), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* highlight label on focus */
+input:focus + label, textarea:focus + label { /* not adjacent sibling, but we can use :focus-within in parent */
+}
+.field-group:focus-within label {
+  color: #00FFFF;
+}
+
+/* ---------- SUBMIT BUTTON ---------- */
+.submit-btn {
+  background: var(--accent-cyan);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 40px;
+  padding: 1.1rem 2rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  box-shadow: 0 10px 20px -8px rgba(0, 255, 255, 0.3);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.submit-btn i {
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+}
+
+.submit-btn:hover {
+  background: var(--accent-yellow);
+  transform: scale(1.04);
+  box-shadow: 0 0 30px var(--accent-yellow), 0 15px 25px -10px rgba(255, 215, 0, 0.5);
+  color: #0a0a0a;
+}
+
+.submit-btn:hover i {
+  transform: translateX(5px);
+}
+
+.submit-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 45px var(--accent-yellow);
+}
+
+/* ---------- RECIPIENT EMAIL CHIPS ---------- */
+.recipient-input-wrapper {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-end;
+}
+
+.recipient-input-wrapper .field-group {
+  flex: 1;
+  margin: 0;
+}
+
+.add-recipient-btn {
+  background: var(--accent-cyan);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 16px;
+  padding: 0.9rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 10px rgba(0, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  height: fit-content;
+}
+
+.add-recipient-btn:hover {
+  background: var(--accent-yellow);
+  box-shadow: 0 8px 15px rgba(255, 215, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.add-recipient-btn:active {
+  transform: scale(0.95);
+}
+
+.add-recipient-btn i {
+  font-size: 1rem;
+}
+
+/* Email chips container */
+.recipient-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  min-height: 50px;
+  align-content: flex-start;
+}
+
+.recipient-chips-container.empty {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.email-chip {
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, #0099CC 100%);
+  color: #0a0a0a;
+  padding: 0.6rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 4px 12px rgba(0, 255, 255, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.email-chip .remove-email {
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  color: #0a0a0a;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin-left: 0.4rem;
+}
+
+.email-chip .remove-email:hover {
+  background: rgba(0, 0, 0, 0.4);
+  transform: scale(1.1);
+}
+
+.recipient-count {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.recipient-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.8rem;
+}
+
+.remove-all-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.remove-all-btn:hover {
+  background: #c0392b;
+  box-shadow: 0 8px 15px rgba(231, 76, 60, 0.4);
+  transform: translateY(-2px);
+}
+
+.remove-all-btn:active {
+  transform: scale(0.95);
+}
+
+.remove-all-btn i {
+  font-size: 0.9rem;
+}
+
+/* ---------- THEME TOGGLE SWITCH ---------- */
+.theme-toggle {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 50px;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: all 0.3s ease;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle:hover {
+  box-shadow: 0 6px 16px rgba(0, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.theme-toggle i {
+  font-size: 1.1rem;
+  color: var(--accent-cyan);
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover i {
+  transform: rotate(20deg);
+}
+
+.theme-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+/* ---------- RESPONSIVE (MOBILE) ---------- */
+@media (max-width: 550px) {
+  body {
+    padding: 0.8rem;
+  }
+  .form-card {
+    padding: 1.8rem 1.2rem;
+    border-radius: 1.5rem;
+  }
+  h1 {
+    font-size: 1.8rem;
+  }
+  input, textarea {
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+  }
+  .submit-btn {
+    padding: 0.9rem 1.5rem;
+    font-size: 1rem;
+  }
+  .theme-toggle {
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem 0.8rem;
+  }
+}
+
+/* subtle placeholder color */
+::placeholder {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  opacity: 0.6;
+}
+
+/* remove spinners from number inputs (none here) */
+input[type=email]::-webkit-inner-spin-button, 
+input[type=email]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ---------- IMPORT BUTTON SECTION ---------- */
+.import-section {
+  display: flex;
+  gap: 1rem;
+  margin: 2rem 0 0 0;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.import-btn {
+  background: linear-gradient(135deg, var(--accent-yellow) 0%, #FFC700 100%);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 0.6rem;
+  padding: 1rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+  flex: 1;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.import-btn i {
+  font-size: 1.1rem;
+  transition: transform 0.2s ease;
+}
+
+.import-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
+  background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
+}
+
+.import-btn:active {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 550px) {
+  .import-section {
+    padding: 1rem;
+    margin: 1.5rem 0 0 0;
+  }
+
+  .import-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.85rem;
+  }
+}

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk Email Sender | dark modern UI</title>
+  <!-- Font Awesome 6 (free icons) for subtle floating icons (optional, lightweight) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- External CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/modal.css">
+</head>
+<body>
+
+  <!-- Theme toggle button -->
+  <div class="theme-toggle" id="themeToggle" title="Toggle dark/light mode">
+    <i class="fas fa-moon"></i>
+    <span class="theme-label" id="themeLabel">Light</span>
+  </div>
+
+  <!-- CANVAS for particle animation (GitHub style) -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Floating animated icons (optional, for extra liveliness) -->
+  <div class="floating-icons" id="floatingIcons"></div>
+
+  <!-- MAIN FORM CARD -->
+  <div class="form-card">
+    <h1>✧ bulk sender</h1>
+    <div class="subhead">reach thousands · one sleek interface</div>
+
+    <form class="email-form" id="emailForm">
+      <!-- Sender Email -->
+      <div class="field-group">
+        <label for="sender"><i class="fas fa-envelope"></i> sender email (optional)</label>
+        <input type="email" id="sender" name="sender" placeholder="newsletter@yourdomain.com" autocomplete="off">
+        <small style="color: var(--text-secondary); margin-top: 4px; opacity: 0.7;">Leave blank to use default sender</small>
+      </div>
+
+      <!-- Recipient Email -->
+      <div class="field-group">
+        <label for="recipients"><i class="fas fa-users"></i> recipient emails</label>
+        <div class="recipient-input-wrapper">
+          <div class="field-group">
+            <input type="email" id="recipients" name="recipients" placeholder="recipient@example.com" autocomplete="off">
+          </div>
+          <button type="button" class="add-recipient-btn" id="addRecipientBtn">
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </div>
+        <div class="recipient-chips-container empty" id="recipientChips">
+          <span>No recipients added yet</span>
+        </div>
+        <div class="recipient-footer">
+          <div class="recipient-count" id="recipientCount">Total: 0 recipients</div>
+          <button type="button" class="remove-all-btn" id="removeAllBtn" style="display: none;">
+            <i class="fas fa-trash"></i> Remove All
+          </button>
+        </div>
+      </div>
+
+      <!-- Bulk Import Section -->
+      <div class="import-section">
+        <button type="button" class="import-btn" id="importRecipientBtn">
+          <i class="fas fa-upload"></i> Import Recipients
+        </button>
+      </div>
+
+      <!-- CC (multiple emails, comma separated) using "multiple" attribute -->
+      <div class="field-group">
+        <label for="cc"><i class="fas fa-at"></i> cc (optional)</label>
+        <input type="email" id="cc" name="cc" placeholder="cc@example.com" autocomplete="off">
+        <small style="color: var(--text-secondary); margin-top: 4px; opacity: 0.7;">separate multiple emails with commas</small>
+      </div>
+
+      <!-- Subject -->
+      <div class="field-group">
+        <label for="subject"><i class="fas fa-heading"></i> subject</label>
+        <input type="text" id="subject" name="subject" placeholder="Your campaign subject" required>
+      </div>
+
+      <!-- Body (large textarea) -->
+      <div class="field-group">
+        <label for="body"><i class="fas fa-file-alt"></i> message body</label>
+        <textarea id="body" name="body" placeholder="Write your email content here... (supports formatted text, but this is a demo UI)" required></textarea>
+      </div>
+
+      <!-- Submit button with hover/click animation -->
+      <button type="submit" class="submit-btn">
+        <span>send now</span>
+        <i class="fas fa-paper-plane"></i>
+      </button>
+      <p style="color: var(--text-secondary); font-size: 0.8rem; text-align: center; margin-top: 0.8rem; opacity: 0.7;">emails will be queued for sending via Celery</p>
+    </form>
+  </div>
+
+  <!-- IMPORT MODAL -->
+  <div class="import-modal" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-file-upload"></i> Import Recipients</h2>
+        <button type="button" class="modal-close" id="closeImportModal">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="drag-drop-area" id="dragDropArea">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <h3>Drag and drop your file here</h3>
+          <p>or <button type="button" class="file-browse-btn" id="fileBrowseBtn">browse files</button></p>
+          <small>Supported formats: .csv, .xlsx (one email per line or column)</small>
+        </div>
+        <input type="file" id="fileInput" accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display: none;">
+        
+        <div class="import-preview" id="importPreview" style="display: none;">
+          <h4>Import Summary</h4>
+          <div class="summary-stats">
+            <div class="stat">
+              <span class="label">Total emails</span>
+              <span class="value" id="totalEmails">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">New emails</span>
+              <span class="value new" id="newEmails">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">Duplicates</span>
+              <span class="value duplicate" id="duplicateEmails">0</span>
+            </div>
+          </div>
+          <div class="duplicate-list" id="duplicateList" style="display: none;">
+            <h5><i class="fas fa-exclamation-circle"></i> Already in list:</h5>
+            <ul id="duplicateItemsList"></ul>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="cancelImportBtn">Cancel</button>
+        <button type="button" class="btn-primary" id="confirmImportBtn" style="display: none;">
+          <i class="fas fa-check"></i> Import
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SheetJS for Excel file parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
+  <script src="js/main.js"></script>
+  <script src="js/modal.js"></script>
+
+  <!-- small note: all styles include smooth transitions, particle background, floating icons, responsive -->
+  <!-- CC field uses "multiple" attribute for comma-separated emails -->
+</body>
+</html>
