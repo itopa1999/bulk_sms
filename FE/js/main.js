@@ -93,11 +93,23 @@
 
   // ---------- RECIPIENT EMAIL MANAGEMENT ----------
   let recipients = [];
+  let csvData = null;  // Store CSV data for personalization
+  let csvColumns = [];  // Store available columns
   const recipientInput = document.getElementById('recipients');
   const addRecipientBtn = document.getElementById('addRecipientBtn');
   const recipientChips = document.getElementById('recipientChips');
   const recipientCount = document.getElementById('recipientCount');
   const removeAllBtn = document.getElementById('removeAllBtn');
+  const csvImportStatus = document.getElementById('csvImportStatus');
+  const personalizationPanel = document.getElementById('personalizationPanel');
+  const personalizationMeta = document.getElementById('personalizationMeta');
+  const columnTokenList = document.getElementById('columnTokenList');
+  const subjectInput = document.getElementById('subject');
+  const bodyInput = document.getElementById('body');
+  const subjectPreview = document.getElementById('subjectPreview');
+  const bodyPreview = document.getElementById('bodyPreview');
+  const clearCsvBtn = document.getElementById('clearCsvBtn');
+  let lastTemplateInput = bodyInput;
 
   // Validate email format
   function isValidEmail(email) {
@@ -174,6 +186,80 @@
     recipientCount.textContent = `Total: ${recipients.length} recipient${recipients.length !== 1 ? 's' : ''}`;
   }
 
+  function replaceTemplateVariables(template, rowData) {
+    if (!template || !rowData) {
+      return template || '';
+    }
+
+    return template.replace(/\{([^{}]+)\}/g, (match, columnName) => {
+      return Object.prototype.hasOwnProperty.call(rowData, columnName)
+        ? String(rowData[columnName] ?? '')
+        : match;
+    });
+  }
+
+  function updatePersonalizationPreview() {
+    if (!csvData || csvData.length === 0) {
+      return;
+    }
+
+    const firstRow = csvData[0];
+    subjectPreview.textContent = replaceTemplateVariables(subjectInput.value.trim(), firstRow) || 'Subject preview will appear here';
+    bodyPreview.textContent = replaceTemplateVariables(bodyInput.value.trim(), firstRow) || 'Body preview will appear here';
+  }
+
+  function insertAtCursor(input, text) {
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    input.value = input.value.slice(0, start) + text + input.value.slice(end);
+    input.focus();
+    input.setSelectionRange(start + text.length, start + text.length);
+    updatePersonalizationPreview();
+  }
+
+  function renderCsvImportState() {
+    const hasCsvData = csvData && csvData.length > 0;
+    csvImportStatus.hidden = !hasCsvData;
+    personalizationPanel.hidden = !hasCsvData;
+
+    if (!hasCsvData) {
+      csvImportStatus.innerHTML = '';
+      personalizationMeta.textContent = 'No CSV data imported';
+      columnTokenList.innerHTML = '';
+      subjectPreview.textContent = 'Import a CSV to preview personalization';
+      bodyPreview.textContent = 'Import a CSV to preview personalization';
+      return;
+    }
+
+    const emailColumn = csvColumns.find(col =>
+      ['email', 'Email', 'EMAIL', 'e-mail', 'E-Mail', 'recipient'].includes(col)
+    );
+
+    csvImportStatus.innerHTML = `<strong>${csvData.length}</strong> CSV row${csvData.length !== 1 ? 's' : ''} ready${emailColumn ? ` using <strong>${emailColumn}</strong>` : ''}`;
+    personalizationMeta.textContent = `${csvData.length} row${csvData.length !== 1 ? 's' : ''} imported. Click a token to insert it into the template.`;
+
+    columnTokenList.innerHTML = '';
+    csvColumns.forEach(column => {
+      const token = document.createElement('button');
+      token.type = 'button';
+      token.className = 'column-token';
+      token.textContent = `{${column}}`;
+      token.title = `Insert {${column}}`;
+      token.addEventListener('click', () => {
+        insertAtCursor(lastTemplateInput, `{${column}}`);
+      });
+      columnTokenList.appendChild(token);
+    });
+
+    updatePersonalizationPreview();
+  }
+
+  function clearCsvImport() {
+    csvData = null;
+    csvColumns = [];
+    renderCsvImportState();
+  }
+
   // Add recipient on button click
   addRecipientBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -194,6 +280,16 @@
     e.preventDefault();
     removeAllRecipients();
   });
+
+  subjectInput.addEventListener('input', updatePersonalizationPreview);
+  bodyInput.addEventListener('input', updatePersonalizationPreview);
+  subjectInput.addEventListener('focus', () => {
+    lastTemplateInput = subjectInput;
+  });
+  bodyInput.addEventListener('focus', () => {
+    lastTemplateInput = bodyInput;
+  });
+  clearCsvBtn.addEventListener('click', clearCsvImport);
 
   // Make removeRecipient global so onclick works
   window.removeRecipient = removeRecipient;
@@ -245,8 +341,18 @@
       return;
     }
 
-    if (recipients.length === 0) {
-      alert('⚠️ Please add at least one recipient');
+    if (csvData && csvData.length > 0) {
+      // CSV data loaded - no need for manual recipients
+      // Check if CSV has email column
+      const hasEmailColumn = csvColumns.some(col =>
+        ['email', 'Email', 'EMAIL', 'e-mail', 'E-Mail', 'recipient'].includes(col)
+      );
+      if (!hasEmailColumn) {
+        alert('⚠️ CSV data must have an email column (named: email, Email, or EMAIL)');
+        return;
+      }
+    } else if (recipients.length === 0) {
+      alert('⚠️ Please either:\n1. Import CSV data using "Import Recipients" button, OR\n2. Add at least one recipient manually');
       return;
     }
 
@@ -263,11 +369,18 @@
     // Prepare API payload
     const payload = {
       sender: sender,
-      recipients: recipients,
-      cc: cc && cc.length > 0 ? cc : null,
       subject: subject,
       body: body
     };
+
+    // If CSV data is loaded, use it for personalization; otherwise use manual recipients
+    if (csvData && csvData.length > 0) {
+      payload.csv_data = csvData;
+      payload.cc = cc && cc.length > 0 ? cc : null;
+    } else {
+      payload.recipients = recipients;
+      payload.cc = cc && cc.length > 0 ? cc : null;
+    }
 
     // Show sending animation
     const btn = e.target.querySelector('.submit-btn');
@@ -314,7 +427,10 @@
           // Reset form
           form.reset();
           recipients = [];
+          csvData = null;
+          csvColumns = [];
           updateRecipientDisplay();
+          renderCsvImportState();
 
           alert(`✅ Email queued for sending!\nTask ID: ${data.task_id}\n\nCheck status with task ID in the backend.`);
         }, 2000);
@@ -396,8 +512,16 @@
     updateRecipientDisplay();
   };
 
+  window.importCSVData = function(importedRows, importedColumns) {
+    csvData = Array.isArray(importedRows) ? importedRows : [];
+    csvColumns = Array.isArray(importedColumns) ? importedColumns : [];
+    renderCsvImportState();
+  };
+
   // Initialize modal with current recipients
   if (window.setRecipientsRef) {
     window.setRecipientsRef(recipients);
   }
+
+  renderCsvImportState();
 })();

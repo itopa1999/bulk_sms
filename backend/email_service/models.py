@@ -21,6 +21,8 @@ class EmailLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     error_message = models.TextField(null=True, blank=True)
+    # New field to store CSV data for personalization
+    csv_data = models.JSONField(null=True, blank=True)  # List of dicts with row data
 
     class Meta:
         ordering = ['-created_at']

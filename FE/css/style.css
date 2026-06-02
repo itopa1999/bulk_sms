@@ -527,8 +527,132 @@ input[type=email]::-webkit-outer-spin-button {
   transform: translateY(-1px);
 }
 
+.csv-import-status {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.csv-import-status strong {
+  color: var(--accent-cyan);
+}
+
+.personalization-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.personalization-panel[hidden],
+.csv-import-status[hidden] {
+  display: none;
+}
+
+.personalization-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.personalization-header h3 {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.personalization-header h3 i {
+  color: var(--accent-cyan);
+  margin-right: 0.4rem;
+}
+
+.personalization-header p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.clear-csv-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.clear-csv-btn:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+.column-token-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.column-token {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-cyan);
+  color: var(--text-primary);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.column-token:hover {
+  border-color: var(--accent-cyan);
+  transform: translateY(-1px);
+}
+
+.template-preview {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.template-preview > div {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 0.9rem;
+  min-width: 0;
+}
+
+.preview-label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.45rem;
+}
+
+.template-preview strong,
+.template-preview pre {
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+}
+
 @media (max-width: 550px) {
   .import-section {
+    flex-direction: column;
+    align-items: stretch;
     padding: 1rem;
     margin: 1.5rem 0 0 0;
   }
@@ -536,5 +660,9 @@ input[type=email]::-webkit-outer-spin-button {
   .import-btn {
     padding: 0.8rem 1.5rem;
     font-size: 0.85rem;
+  }
+
+  .personalization-header {
+    flex-direction: column;
   }
 }

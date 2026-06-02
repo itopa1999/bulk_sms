@@ -64,6 +64,7 @@
         <button type="button" class="import-btn" id="importRecipientBtn">
           <i class="fas fa-upload"></i> Import Recipients
         </button>
+        <div class="csv-import-status" id="csvImportStatus" hidden></div>
       </div>
 
       <!-- CC (multiple emails, comma separated) using "multiple" attribute -->
@@ -83,6 +84,29 @@
       <div class="field-group">
         <label for="body"><i class="fas fa-file-alt"></i> message body</label>
         <textarea id="body" name="body" placeholder="Write your email content here... (supports formatted text, but this is a demo UI)" required></textarea>
+      </div>
+
+      <div class="personalization-panel" id="personalizationPanel" hidden>
+        <div class="personalization-header">
+          <div>
+            <h3><i class="fas fa-wand-magic-sparkles"></i> Personalization</h3>
+            <p id="personalizationMeta">No CSV data imported</p>
+          </div>
+          <button type="button" class="clear-csv-btn" id="clearCsvBtn">
+            <i class="fas fa-times"></i> Clear
+          </button>
+        </div>
+        <div class="column-token-list" id="columnTokenList"></div>
+        <div class="template-preview">
+          <div>
+            <span class="preview-label">Subject preview</span>
+            <strong id="subjectPreview">Import a CSV to preview personalization</strong>
+          </div>
+          <div>
+            <span class="preview-label">Body preview</span>
+            <pre id="bodyPreview">Import a CSV to preview personalization</pre>
+          </div>
+        </div>
       </div>
 
       <!-- Submit button with hover/click animation -->
@@ -117,18 +141,19 @@
           <h4>Import Summary</h4>
           <div class="summary-stats">
             <div class="stat">
-              <span class="label">Total emails</span>
+              <span class="label">Total rows</span>
               <span class="value" id="totalEmails">0</span>
             </div>
             <div class="stat">
-              <span class="label">New emails</span>
+              <span class="label">Columns</span>
               <span class="value new" id="newEmails">0</span>
             </div>
             <div class="stat">
-              <span class="label">Duplicates</span>
+              <span class="label">Email column</span>
               <span class="value duplicate" id="duplicateEmails">0</span>
             </div>
           </div>
+          <div class="import-columns" id="importColumns"></div>
           <div class="duplicate-list" id="duplicateList" style="display: none;">
             <h5><i class="fas fa-exclamation-circle"></i> Already in list:</h5>
             <ul id="duplicateItemsList"></ul>
@@ -145,9 +170,6 @@
     </div>
   </div>
 
-  <!-- SheetJS for Excel file parsing -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  
   <script src="js/main.js"></script>
   <script src="js/modal.js"></script>
 

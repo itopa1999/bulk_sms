@@ -6,4 +6,5 @@ app_name = 'email_service'
 urlpatterns = [
     path('send/', views.send_email, name='send_email'),
     path('status/<str:task_id>/', views.email_status, name='email_status'),
+    path('upload-csv/', views.upload_csv_file, name='upload_csv_file'),
 ]

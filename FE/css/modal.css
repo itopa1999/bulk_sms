@@ -218,6 +218,45 @@
   margin-right: 0.5rem;
 }
 
+.import-columns {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.import-columns h5 {
+  color: var(--text-primary);
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.import-column-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.import-column-token {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.82rem;
+  word-break: break-word;
+}
+
+.import-warning {
+  margin-top: 0.85rem;
+  padding: 0.75rem;
+  background: rgba(255, 165, 0, 0.16);
+  border: 1px solid rgba(255, 165, 0, 0.35);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
 .modal-footer {
   display: flex;
   gap: 1rem;

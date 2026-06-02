@@ -7,6 +7,7 @@ from django.conf import settings
 import os
 from .models import EmailLog
 from .tasks import send_bulk_emails
+from .utils import parse_csv_file, parse_excel_file
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 @require_http_methods(["POST"])
 def send_email(request):
     """
-    API endpoint to send bulk emails
+    API endpoint to send bulk emails with optional CSV data for personalization
     
     Expected JSON payload:
     {
@@ -23,16 +24,25 @@ def send_email(request):
         "recipients": ["email1@example.com", "email2@example.com"],
         "cc": ["cc@example.com"] (optional),
         "subject": "Email Subject",
-        "body": "Email body content"
+        "body": "Email body content with {column_name} placeholders",
+        "csv_data": [
+            {"name": "John", "email": "john@example.com"},
+            {"name": "Jane", "email": "jane@example.com"}
+        ] (optional for personalization)
     }
+    
+    If csv_data is provided:
+    - recipients should contain email column names like "email" or can be omitted
+    - body can contain {column_name} placeholders that will be replaced with actual values
+    - Each row in csv_data will receive a personalized email
     """
     try:
         data = json.loads(request.body)
         
         # Validate required fields
-        if not data.get('recipients'):
+        if not data.get('recipients') and not data.get('csv_data'):
             return JsonResponse(
-                {'error': 'recipients field is required'},
+                {'error': 'Either recipients list or csv_data is required'},
                 status=400
             )
         
@@ -45,14 +55,6 @@ def send_email(request):
         if not data.get('body'):
             return JsonResponse(
                 {'error': 'body field is required'},
-                status=400
-            )
-        
-        # Validate recipients is a list
-        recipients = data.get('recipients', [])
-        if not isinstance(recipients, list) or len(recipients) == 0:
-            return JsonResponse(
-                {'error': 'recipients must be a non-empty list'},
                 status=400
             )
         
@@ -69,6 +71,16 @@ def send_email(request):
         
         subject = data.get('subject', '').strip()
         body = data.get('body', '').strip()
+        recipients = data.get('recipients', [])
+        csv_data = data.get('csv_data')
+        
+        # Validate recipients
+        if not csv_data:
+            if not isinstance(recipients, list) or len(recipients) == 0:
+                return JsonResponse(
+                    {'error': 'recipients must be a non-empty list'},
+                    status=400
+                )
         
         # Create EmailLog record
         email_log = EmailLog.objects.create(
@@ -77,6 +89,7 @@ def send_email(request):
             cc=cc,
             subject=subject,
             body=body,
+            csv_data=csv_data,  # Store CSV data for personalization
             status='pending'
         )
         
@@ -87,7 +100,8 @@ def send_email(request):
             recipients=recipients,
             cc=cc,
             subject=subject,
-            body=body
+            body=body,
+            csv_data=csv_data
         )
         
         # Store task ID for tracking
@@ -144,5 +158,71 @@ def email_status(request, task_id):
         logger.error(f"Error checking task status: {str(e)}")
         return JsonResponse(
             {'error': f'Error checking status: {str(e)}'},
+            status=500
+        )
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def upload_csv_file(request):
+    """
+    Upload and parse CSV or Excel file
+    
+    Expected: multipart/form-data with 'file' field containing .csv or .xlsx file
+    
+    Returns:
+    {
+        "success": true,
+        "columns": ["name", "email", "phone"],
+        "data": [
+            {"name": "John", "email": "john@example.com", "phone": "123-456-7890"},
+            ...
+        ],
+        "row_count": 100
+    }
+    """
+    try:
+        if 'file' not in request.FILES:
+            return JsonResponse(
+                {'error': 'No file provided'},
+                status=400
+            )
+        
+        uploaded_file = request.FILES['file']
+        file_name = uploaded_file.name.lower()
+        
+        # Read file content
+        file_content = uploaded_file.read()
+        
+        # Parse based on file type
+        if file_name.endswith('.csv'):
+            rows, columns = parse_csv_file(file_content)
+        elif file_name.endswith('.xlsx') or file_name.endswith('.xls'):
+            rows, columns = parse_excel_file(file_content)
+        else:
+            return JsonResponse(
+                {'error': 'Unsupported file format. Please upload .csv or .xlsx file'},
+                status=400
+            )
+        
+        logger.info(f"Successfully parsed file {file_name} with {len(rows)} rows and columns: {columns}")
+        
+        return JsonResponse({
+            'success': True,
+            'columns': columns,
+            'data': rows,
+            'row_count': len(rows)
+        })
+        
+    except ValueError as e:
+        logger.error(f"Validation error in upload_csv_file: {str(e)}")
+        return JsonResponse(
+            {'error': str(e)},
+            status=400
+        )
+    except Exception as e:
+        logger.error(f"Error uploading CSV file: {str(e)}")
+        return JsonResponse(
+            {'error': f'Error processing file: {str(e)}'},
             status=500
         )

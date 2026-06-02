@@ -9,31 +9,14 @@
   const confirmImportBtn = document.getElementById('confirmImportBtn');
   const dragDropArea = document.getElementById('dragDropArea');
   const fileInput = document.getElementById('fileInput');
-  const fileBrowseBtn = document.getElementById('fileBrowseBtn');
   const importPreview = document.getElementById('importPreview');
+  const importColumns = document.getElementById('importColumns');
   
-  let emailsToImport = [];
-  let duplicateEmails = [];
+  let csvData = [];
+  let csvColumns = [];
 
-  // Function to validate email format
-  function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  // Get recipients from the recipients chips container
-  function getExistingRecipients() {
-    const chipsContainer = document.getElementById('recipientChips');
-    const recipients = [];
-    const emailChips = chipsContainer.querySelectorAll('.email-chip span');
-    emailChips.forEach(chip => {
-      const email = chip.textContent.trim();
-      if (email) {
-        recipients.push(email);
-      }
-    });
-    return recipients;
-  }
+  const defaultDragDropHtml = dragDropArea.innerHTML;
+  const EMAIL_COLUMNS = ['email', 'Email', 'EMAIL', 'e-mail', 'E-Mail', 'recipient'];
 
   // Open import modal
   importRecipientBtn.addEventListener('click', (e) => {
@@ -58,17 +41,19 @@
     }
   });
 
-  // Browse files button
-  fileBrowseBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    fileInput.click();
+  // Browse files button. The button is recreated during reset, so delegate from the drop area.
+  dragDropArea.addEventListener('click', (e) => {
+    if (e.target.closest('#fileBrowseBtn')) {
+      e.preventDefault();
+      fileInput.click();
+    }
   });
 
   // Handle file selection
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
-      parseFile(file);
+      uploadFileToBackend(file);
     }
   });
 
@@ -87,196 +72,111 @@
     dragDropArea.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
     if (file) {
-      parseFile(file);
+      uploadFileToBackend(file);
     }
   });
 
-  // Parse file and extract emails
-  function parseFile(file) {
-    // Check file type
+  // Upload file to backend
+  function uploadFileToBackend(file) {
+    // Validate file type
     const fileType = file.name.split('.').pop().toLowerCase();
-    
-    if (fileType === 'xlsx' || fileType === 'xls') {
-      // Check if XLSX library is loaded, with a brief retry
-      if (typeof XLSX === 'undefined') {
-        // Wait briefly for library to load
-        setTimeout(() => {
-          if (typeof XLSX === 'undefined') {
-            alert('⚠️ Excel library not loaded.\n\n1. Check your internet connection\n2. Refresh the page\n3. Try again');
-            console.error('XLSX library not available after retry. Window.XLSX:', typeof window.XLSX);
-            resetImportModal();
-          } else {
-            parseExcelFile(file);
-          }
-        }, 500);
-        return;
-      }
-      // Parse Excel file
-      parseExcelFile(file);
-    } else if (fileType === 'csv') {
-      // Parse CSV file
-      parseCSVFile(file);
-    } else {
+    if (fileType !== 'csv' && fileType !== 'xlsx' && fileType !== 'xls') {
       alert('⚠️ Invalid file format. Please upload a CSV or Excel file.');
+      return;
     }
-  }
 
-  // Parse CSV file
-  function parseCSVFile(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target.result;
-        const lines = content.split('\n').map(line => line.trim()).filter(line => line);
-        
-        // Extract emails from each line
-        const extractedEmails = [];
-        
-        lines.forEach((line) => {
-          // Handle CSV format (email might be in different columns)
-          const cells = line.split(',').map(cell => cell.trim());
-          
-          cells.forEach(cell => {
-            if (isValidEmail(cell)) {
-              extractedEmails.push(cell);
-            }
-          });
-        });
+    // Show loading state
+    dragDropArea.innerHTML = '<i class="fas fa-spinner fa-spin"></i><h3>Processing file...</h3>';
+    dragDropArea.style.pointerEvents = 'none';
 
-        if (extractedEmails.length === 0) {
-          alert('⚠️ No valid emails found in the CSV file.');
-          resetImportModal();
+    // Create FormData and send to backend
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch('http://localhost:8000/api/email/upload-csv/', {
+      method: 'POST',
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          csvColumns = data.columns;
+          csvData = data.data;
+          showImportPreview(data);
         } else {
-          checkDuplicates(extractedEmails);
+          throw new Error(data.error || 'Unknown error');
         }
-      } catch (error) {
-        alert('⚠️ Error parsing CSV file. Please check the file format.');
-        console.error('CSV parsing error:', error);
-      }
-    };
-    reader.onerror = () => {
-      alert('⚠️ Error reading the file. Please try again.');
-    };
-    reader.readAsText(file);
+      })
+      .catch(error => {
+        console.error('Error uploading file:', error);
+        alert(`⚠️ Error processing file:\n${error.message}\n\nMake sure the backend is running on http://localhost:8000`);
+        resetImportModal();
+      });
   }
 
-  // Parse Excel file
-  function parseExcelFile(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const extractedEmails = [];
-
-        // Process all sheets
-        workbook.SheetNames.forEach(sheetName => {
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-          // Flatten and extract emails from all cells
-          jsonData.forEach(row => {
-            if (Array.isArray(row)) {
-              row.forEach(cell => {
-                if (cell !== null && cell !== undefined && cell !== '') {
-                  const cellValue = String(cell).trim();
-                  if (cellValue && isValidEmail(cellValue)) {
-                    extractedEmails.push(cellValue);
-                  }
-                }
-              });
-            }
-          });
-        });
-
-        if (extractedEmails.length === 0) {
-          alert('⚠️ No valid emails found in the Excel file.');
-          resetImportModal();
-        } else {
-          checkDuplicates(extractedEmails);
-        }
-      } catch (error) {
-        alert('⚠️ Error parsing Excel file. Please ensure it is a valid .xlsx file.\n\nTechnical error: ' + error.message);
-        console.error('Excel parsing error:', error);
-      }
-    };
-    reader.onerror = () => {
-      alert('⚠️ Error reading the file. Please try again.');
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  // Check for duplicates with existing recipients
-  function checkDuplicates(importedEmails) {
-    const existingRecipients = getExistingRecipients();
-    const validEmails = [];
-    duplicateEmails = [];
-
-    importedEmails.forEach(email => {
-      const emailLower = email.toLowerCase();
-      const isDuplicate = existingRecipients.some(existing => existing.toLowerCase() === emailLower);
-      
-      if (isDuplicate) {
-        duplicateEmails.push(email);
-      } else if (!validEmails.includes(emailLower)) {
-        validEmails.push(emailLower);
-      }
-    });
-
-    emailsToImport = validEmails;
-    showImportPreview();
-  }
-
-  // Show import preview with statistics
-  function showImportPreview() {
+  // Show import preview with statistics and columns
+  function showImportPreview(data) {
     dragDropArea.style.display = 'none';
+    dragDropArea.style.pointerEvents = 'auto';
+    dragDropArea.innerHTML = defaultDragDropHtml;
     importPreview.style.display = 'block';
 
-    document.getElementById('totalEmails').textContent = emailsToImport.length + duplicateEmails.length;
-    document.getElementById('newEmails').textContent = emailsToImport.length;
-    document.getElementById('duplicateEmails').textContent = duplicateEmails.length;
+    document.getElementById('totalEmails').textContent = data.row_count;
+    document.getElementById('newEmails').textContent = data.columns.length;
 
-    if (duplicateEmails.length > 0) {
-      const duplicateList = document.getElementById('duplicateList');
-      const duplicateItemsList = document.getElementById('duplicateItemsList');
-      duplicateItemsList.innerHTML = '';
-      
-      duplicateEmails.slice(0, 5).forEach(email => {
-        const li = document.createElement('li');
-        li.textContent = email;
-        duplicateItemsList.appendChild(li);
-      });
+    const emailColumn = data.columns.find(col => EMAIL_COLUMNS.includes(col));
+    const emailColumnStat = document.getElementById('duplicateEmails');
+    emailColumnStat.textContent = emailColumn ? 'Yes' : 'No';
+    emailColumnStat.className = emailColumn ? 'value new' : 'value duplicate';
 
-      if (duplicateEmails.length > 5) {
-        const li = document.createElement('li');
-        li.textContent = `... and ${duplicateEmails.length - 5} more`;
-        duplicateItemsList.appendChild(li);
-      }
+    let columnsHtml = '<h5><i class="fas fa-columns"></i> Available Columns</h5>';
+    columnsHtml += '<div class="import-column-list">';
 
-      duplicateList.style.display = 'block';
+    data.columns.forEach(col => {
+      columnsHtml += `<span class="import-column-token">{${escapeHtml(col)}}</span>`;
+    });
+
+    columnsHtml += '</div>';
+
+    if (!emailColumn) {
+      columnsHtml += '<div class="import-warning"><i class="fas fa-exclamation-triangle"></i> No email column detected. Rename one column to email, Email, EMAIL, e-mail, E-Mail, or recipient before sending.</div>';
     }
+
+    importColumns.innerHTML = columnsHtml;
 
     confirmImportBtn.style.display = 'flex';
   }
 
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   // Confirm and import emails
   confirmImportBtn.addEventListener('click', () => {
-    // Call main.js function to add emails
-    if (window.addImportedEmails) {
-      window.addImportedEmails(emailsToImport);
+    // Call main.js function to add CSV data
+    if (window.importCSVData) {
+      window.importCSVData(csvData, csvColumns);
     }
     importModal.classList.remove('active');
-    alert(`✓ Successfully imported ${emailsToImport.length} email(s)`);
+    alert(`✓ Successfully imported ${csvData.length} row(s)\n\nUse {column_name} placeholders in subject and body for personalization!`);
   });
 
   // Reset import modal
   function resetImportModal() {
     dragDropArea.style.display = 'block';
+    dragDropArea.style.pointerEvents = 'auto';
     importPreview.style.display = 'none';
+    importColumns.innerHTML = '';
     confirmImportBtn.style.display = 'none';
-    emailsToImport = [];
-    duplicateEmails = [];
+    csvData = [];
+    csvColumns = [];
     fileInput.value = '';
     dragDropArea.classList.remove('dragover');
+    dragDropArea.innerHTML = defaultDragDropHtml;
   }
 })();
